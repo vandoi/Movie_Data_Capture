@@ -67,6 +67,9 @@ def create_data_and_move(file_path: str, c: config.Config,debug):
     # Normalized number, eg: 111xxx-222.mp4 -> xxx-222.mp4
     n_number = get_number(debug,file_path,c)
 
+    if not n_number:
+        return
+
     if debug == True:
         print("[!]Making Data for [{}], the number is [{}]".format(file_path, n_number))
         return core_main(file_path, n_number, c)
@@ -128,15 +131,18 @@ def decompress_leftover(leftover: str, extract_to: str, type: str):
             file_list = zip_ref.namelist()
             path_list = list()
             try:
+                dirname = os.path.splitext(os.path.basename(leftover))[0]
+                dir_path = os.path.join(extract_to, dirname)
+                os.makedirs(dir_path)
                 for i, f in enumerate(file_list):
-                    o_path = os.path.join(extract_to, f)
+                    o_path = os.path.join(dir_path, f)
                     print("[+]Decompressing file '{}' to path '{}'".format(f, o_path))
-                    zip_ref.extract(f, extract_to)
-                    path_list.append(o_path)
+                    zip_ref.extract(f, dir_path)
+                path_list.append(dir_path)
             except Exception as err:
                 print("[-]Error orrured when decompressing '{}': {}".format(leftover, err))
                 return []
-            print("[+]Unzip leftover '{}' to '{}' successfully".format(leftover, extract_to))
+            print("[+]Unzip leftover '{}' to '{}' successfully".format(leftover, dir_path))
             return path_list
     else:
         print("[-]Unsupported compress format: {}".format(type))
@@ -156,17 +162,20 @@ def check_and_move_leftover(root, movie_path: str, dir_path_move_to: str, c: con
     dirs = os.listdir(parent_path)
     for entry in dirs:
         if entry in c.leftover():
-            print("[+]Find leftover '{}' to preserve".format(entry))
-            entry_path = os.path.join(parent_path, entry)
-            entry_ext = os.path.splitext(entry_path)[1]
-            if entry_ext in zip_type:
-                print("[!]Leftover '{}' is a compressed file".format(entry))
-                # remember to update entry_path to the output directory
-                leftovers = decompress_leftover(entry_path, parent_path, entry_ext)
-                for l in leftovers:
-                    shutil.move(l, dir_path_move_to)
-            else:
-                shutil.move(entry_path, dir_path_move_to)
+            try:
+                print("[+]Find leftover '{}' to preserve".format(entry))
+                entry_path = os.path.join(parent_path, entry)
+                entry_ext = os.path.splitext(entry_path)[1]
+                if entry_ext in zip_type:
+                    print("[!]Leftover '{}' is a compressed file".format(entry))
+                    # remember to update entry_path to the output directory
+                    leftovers = decompress_leftover(entry_path, parent_path, entry_ext)
+                    for l in leftovers:
+                        shutil.move(l, dir_path_move_to)
+                else:
+                    shutil.move(entry_path, dir_path_move_to)
+            except shutil.Error as err:
+                print("[-]Unable to move leftover: {}".format(err))
 
 if __name__ == '__main__':
     version = '3.9.1'

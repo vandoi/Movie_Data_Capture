@@ -32,6 +32,8 @@ def get_number(debug, filepath: str, conf: config.Config) -> str:
     try:
         if '-' in filename or '_' in filename:  # 普通提取番号 主要处理包含减号-和_的番号
             # strip unwanted text in movie name
+            filter_names = conf.filter_names()
+            # print("filter_names: {}".format(filter_names))
             for unwanted in conf.filter_names():
                 filename = filename.replace(unwanted, '')
             # 去除文件名中时间
@@ -76,7 +78,7 @@ def get_number(debug, filepath: str, conf: config.Config) -> str:
                 else:
                     results = results[0]
                 number = results[1] # the second capture group is number
-                identifier = number
+                identifier = 'FC2-' + number
             else: # generic for censored movies
                 print("[!]Detected a censored movie")
                 results = censor_re.findall(filename)
@@ -88,6 +90,9 @@ def get_number(debug, filepath: str, conf: config.Config) -> str:
                 number = results[1] # the second capture group is number
                 identifier = publisher + '-' + number
 
+            if identifier == "":
+                identifier = filename
+                
             return identifier
         else:  # 提取不含减号-的番号，FANZA CID
             try:
@@ -100,6 +105,8 @@ def get_number(debug, filepath: str, conf: config.Config) -> str:
     except Exception as e:
         print('[-]' + str(e))
         return
+    except ValueError as e:
+        return filename
 
 def get_number_bak(debug,filename: str) -> str:
     # """

@@ -20,6 +20,7 @@ class Config:
 
         # parse config that need to be converted to list
         self._parse_to_list()
+        self._parse_filter_names()
 
     def main_mode(self) -> str:
         try:
@@ -58,6 +59,9 @@ class Config:
 
     def location_rule(self) -> str:
         return self.conf.get("Name_Rule", "location_rule")
+
+    def add_studio_to_number(self) -> bool:
+        return self.conf.getboolean("Name_Rule", "add_studio_to_number")
     
     def max_title_len(self) -> int:
         """
@@ -93,11 +97,12 @@ class Config:
         return self._filter_names
 
     def _parse_filter_names(self):
-        filter_name_path = self.conf.getboolean("others", "filter_name_path")
+        filter_name_path = self.conf.get("others", "filter_name_path")
+        filter_name_path = os.path.abspath(filter_name_path)
         if os.path.isfile(filter_name_path):
             with open(filter_name_path, 'r') as filter_d:
                 for line in filter_d:
-                    self._filter_name.append(line.rstrip('\n'))
+                    self._filter_names.append(line.rstrip('\n'))
         
     def _parse_to_list(self):
         leftover_str = self.conf.get("others", "leftover")

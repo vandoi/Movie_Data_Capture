@@ -195,6 +195,9 @@ def get_data_from_json(file_number, filepath, conf: config.Config):  # 从JSON�
     studio = studio.replace('/',' ')
     # ===  替换Studio片假名 END
     
+    # patch file name with publisher (if necessary)
+    if conf.add_studio_to_number():
+        number = patch_studio_name_to_filename(studio, number)
     location_rule = eval(conf.location_rule())
 
     # Process only Windows.
@@ -564,6 +567,8 @@ def core_main(file_path, number_th, conf: config.Config):
         c_word = '-C'  # 中文字幕影片后缀
     if '流出' in filepath:
         liuchu = '流出'
+    if 'leak' in filepath:
+        liuchu = '流出'
 
     # 创建输出失败目录
     CreatFailedFolder(conf.failed_folder())
@@ -571,6 +576,10 @@ def core_main(file_path, number_th, conf: config.Config):
     # 调试模式检测
     if conf.debug():
         debug_print(json_data)
+
+    # patch file name with publisher (if necessary)
+    if conf.add_studio_to_number():
+        number = patch_studio_name_to_filename(json_data['studio'], number)
 
     # 创建文件夹
     path = create_folder(conf.success_folder(), json_data['location_rule'], json_data, conf)
@@ -594,10 +603,6 @@ def core_main(file_path, number_th, conf: config.Config):
 
         # 打印文件
         print_files(path, c_word, json_data['naming_rule'], part, cn_sub, json_data, filepath, conf.failed_folder(), tag, json_data['actor_list'], liuchu)
-
-        # patch file name with publisher (if necessary)
-        number = patch_studio_name_to_filename(json_data['studio'], number)
-
         # 移动文件
         paste_file_to_folder(filepath, path, number, c_word, conf)
     elif conf.main_mode() == 2:
