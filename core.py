@@ -89,6 +89,7 @@ def get_data_from_json(file_number, filepath, conf: config.Config):  # 从JSON�
         #     print('[+]select dlsite')
         sources.insert(0, sources.pop(sources.index("dlsite")))
 
+    print("sources: {}".format(sources))
     json_data = {}
     for source in sources:
         try:
@@ -98,18 +99,21 @@ def get_data_from_json(file_number, filepath, conf: config.Config):  # 从JSON�
             # if any service return a valid return, break
             if get_data_state(json_data):
                 break
-        except:
-            break
+        except Exception as e:
+            print('[-]Error occured when getting data from {}: {}'.format(source, str(e)))
+            # break
 
     # Return if data not found in all sources
-    if not json_data:
+    if not get_data_state(json_data):
         print('[-]Movie Data not found!')
-        moveFailedFolder(filepath, conf.failed_folder())
+        if conf.failed_move():
+            moveFailedFolder(filepath, conf.failed_folder())
         return
 
     # ================================================网站规则添加结束================================================
-
+    print("json_data: {}".format(json_data))
     title = json_data['title']
+    # if 'actor' in json_data.keys():
     actor_list = str(json_data['actor']).strip("[ ]").replace("'", '').split(',')  # 字符串转列表
     release = json_data['release']
     number = json_data['number']
@@ -185,6 +189,8 @@ def get_data_from_json(file_number, filepath, conf: config.Config):  # 从JSON�
     studio = studio.replace('エムズビデオグループ','M’s Video Group')
     studio = studio.replace('ミニマム','Minimum')
     studio = studio.replace('ワープエンタテインメント','WAAP Entertainment')
+    # added studio name translation for uncensor studio
+    studio = studio.replace('カリビアンコム','Caribbean')
     studio = re.sub('.*/妄想族','妄想族',studio)
     studio = studio.replace('/',' ')
     # ===  替换Studio片假名 END
@@ -419,6 +425,10 @@ def cutImage(imagecut, path, number, c_word):
 def paste_file_to_folder(filepath, path, number, c_word, conf: config.Config):  # 文件路径，番号，后缀，要移动至的位置
     houzhui = str(re.search('[.](AVI|RMVB|WMV|MOV|MP4|MKV|FLV|TS|WEBM|avi|rmvb|wmv|mov|mp4|mkv|flv|ts|webm)$', filepath).group())
 
+    if conf.debug() == True:
+        print("[!]Debug: move {} to {}".format(filepath, path + '/' + number + c_word + houzhui))
+        return
+
     try:
         # 如果soft_link=1 使用软链接
         if conf.soft_link():
@@ -447,6 +457,10 @@ def paste_file_to_folder_mode2(filepath, path, multi_part, number, part, c_word,
     if multi_part == 1:
         number += part  # 这时number会被附加上CD1后缀
     houzhui = str(re.search('[.](AVI|RMVB|WMV|MOV|MP4|MKV|FLV|TS|WEBM|avi|rmvb|wmv|mov|mp4|mkv|flv|ts|webm)$', filepath).group())
+
+    if conf.debug() == True:
+        print("[!]Debug: move {} to {}".format(filepath, path + '/' + number + c_word + houzhui))
+        return
 
     try:
         if conf.soft_link():
@@ -498,7 +512,24 @@ def debug_print(data: json):
     except:
         pass
 
+# for uncensored video, patch studio name to file name
+def patch_studio_name_to_filename(studio, filename):
+    unsensor_publisher = {
+        'Caribbean': 'Caribbean',
+        '一本道': '1Pondo',
+        '一本道 ( 1pondo )': '1Pondo',
+        '東京熱': 'Tokyo-Hot'
+    }
+    results = list(filter(lambda x: (x in studio), unsensor_publisher.keys()))
+    print("[+]Found matched prefix for studio: {}".format(results))
+    if len(results) >= 1:
+        publisher = unsensor_publisher[results[0]]
+        print("[+]Patch filename to {}".format(publisher + '-' + filename))
+        return publisher + '-' + filename
+    else:
+        return filename
 
+# @return: str, the path that movies moved to
 def core_main(file_path, number_th, conf: config.Config):
     # =======================================================================初始化所需变量
     multi_part = 0
@@ -564,8 +595,13 @@ def core_main(file_path, number_th, conf: config.Config):
         # 打印文件
         print_files(path, c_word, json_data['naming_rule'], part, cn_sub, json_data, filepath, conf.failed_folder(), tag, json_data['actor_list'], liuchu)
 
+        # patch file name with publisher (if necessary)
+        number = patch_studio_name_to_filename(json_data['studio'], number)
+
         # 移动文件
         paste_file_to_folder(filepath, path, number, c_word, conf)
     elif conf.main_mode() == 2:
         # 移动文件
         paste_file_to_folder_mode2(filepath, path, multi_part, number, part, c_word, conf)
+
+    return path

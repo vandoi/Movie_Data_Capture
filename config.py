@@ -2,9 +2,12 @@ import os
 import configparser
 import codecs
 
-
 class Config:
     def __init__(self, path: str = "config.ini"):
+        # initialize fields
+        self._leftover = []
+        self._filter_names = []
+
         if os.path.exists(path):
             self.conf = configparser.ConfigParser()
             try:
@@ -14,6 +17,9 @@ class Config:
         else:
             print("[-] Config file not found! Use the default settings")
             self.conf = self._default_config()
+
+        # parse config that need to be converted to list
+        self._parse_to_list()
 
     def main_mode(self) -> str:
         try:
@@ -80,6 +86,23 @@ class Config:
     def debug(self) -> bool:
         return self.conf.getboolean("debug_mode", "switch")
 
+    def leftover(self):
+        return self._leftover
+
+    def filter_names(self):
+        return self._filter_names
+
+    def _parse_filter_names(self):
+        filter_name_path = self.conf.getboolean("others", "filter_name_path")
+        if os.path.isfile(filter_name_path):
+            with open(filter_name_path, 'r') as filter_d:
+                for line in filter_d:
+                    self._filter_name.append(line.rstrip('\n'))
+        
+    def _parse_to_list(self):
+        leftover_str = self.conf.get("others", "leftover")
+        self._leftover = leftover_str.split(",")
+
     @staticmethod
     def _exit(sec: str) -> None:
         print("[-] Read config error! Please check the {} section in config.ini", sec)
@@ -130,6 +153,10 @@ class Config:
         conf.add_section(sec7)
         conf.set(sec7, "switch", "0")
 
+        sec8 = "others"
+        conf.add_section(sec8)
+        conf.set(sec8, "leftover", "gallery", "gallery.zip")
+
         return conf
 
 
@@ -149,3 +176,4 @@ if __name__ == "__main__":
     print(config.escape_literals())
     print(config.escape_folder())
     print(config.debug())
+    print(config.leftover())
