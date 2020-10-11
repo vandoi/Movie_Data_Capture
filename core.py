@@ -198,6 +198,8 @@ def get_data_from_json(file_number, filepath, conf: config.Config):  # 从JSON�
     # patch file name with publisher (if necessary)
     if conf.add_studio_to_number():
         number = patch_studio_name_to_filename(studio, number)
+        json_data['number'] = number
+
     location_rule = eval(conf.location_rule())
 
     # Process only Windows.
@@ -424,6 +426,11 @@ def cutImage(imagecut, path, number, c_word):
         shutil.copyfile(path + '/' + number + c_word + '-fanart.jpg',path + '/' + number + c_word + '-poster.jpg')
         print('[+]Image Copyed!     ' + path + '/' + number + c_word + '-poster.jpg')
 
+def _safe_move(src, target):
+    if os.path.exists(target):
+        raise FileExistsError()
+    else:
+        shutil.move(src, target)
 
 def paste_file_to_folder(filepath, path, number, c_word, conf: config.Config):  # 文件路径，番号，后缀，要移动至的位置
     houzhui = str(re.search('[.](AVI|RMVB|WMV|MOV|MP4|MKV|FLV|TS|WEBM|avi|rmvb|wmv|mov|mp4|mkv|flv|ts|webm)$', filepath).group())
@@ -437,24 +444,26 @@ def paste_file_to_folder(filepath, path, number, c_word, conf: config.Config):  
         if conf.soft_link():
             os.symlink(filepath, path + '/' + number + c_word + houzhui)
         else:
-            os.rename(filepath, path + '/' + number + c_word + houzhui)
+            # os.rename(filepath, path + '/' + number + c_word + houzhui)
+            _safe_move(filepath, path + '/' + number + c_word + houzhui)
         if os.path.exists(os.getcwd() + '/' + number + c_word + '.srt'):  # 字幕移动
-            os.rename(os.getcwd() + '/' + number + c_word + '.srt', path + '/' + number + c_word + '.srt')
+            # os.rename(os.getcwd() + '/' + number + c_word + '.srt', path + '/' + number + c_word + '.srt')
+            _safe_move(os.getcwd() + '/' + number + c_word + '.srt', path + '/' + number + c_word + '.srt')
             print('[+]Sub moved!')
         elif os.path.exists(os.getcwd() + '/' + number + c_word + '.ssa'):
-            os.rename(os.getcwd() + '/' + number + c_word + '.ssa', path + '/' + number + c_word + '.ssa')
+            # os.rename(os.getcwd() + '/' + number + c_word + '.ssa', path + '/' + number + c_word + '.ssa')
+            _safe_move(os.getcwd() + '/' + number + c_word + '.ssa', path + '/' + number + c_word + '.ssa')
             print('[+]Sub moved!')
         elif os.path.exists(os.getcwd() + '/' + number + c_word + '.sub'):
-            os.rename(os.getcwd() + '/' + number + c_word + '.sub', path + '/' + number + c_word + '.sub')
+            # os.rename(os.getcwd() + '/' + number + c_word + '.sub', path + '/' + number + c_word + '.sub')
+            _safe_move(os.getcwd() + '/' + number + c_word + '.sub', path + '/' + number + c_word + '.sub')
             print('[+]Sub moved!')
     except FileExistsError:
         print('[-]File Exists! Please check your movie!')
-        print('[-]move to the root folder of the program.')
         return 
-    except PermissionError:
-        print('[-]Error! Please run as administrator!')
-        return 
-
+    except shutil.Error as err:
+        print("[-]Unable to move file '{}', reason: {}".format(filepath, err))
+        return
 
 def paste_file_to_folder_mode2(filepath, path, multi_part, number, part, c_word, conf):  # 文件路径，番号，后缀，要移动至的位置
     if multi_part == 1:
@@ -498,7 +507,6 @@ def get_part(filepath, failed_folder):
         print("[-]failed!Please rename the filename again!")
         moveFailedFolder(filepath, failed_folder)
         return
-
 
 def debug_print(data: json):
     try:
@@ -562,9 +570,25 @@ def core_main(file_path, number_th, conf: config.Config):
     if '-CD' in filepath or '-cd' in filepath:
         multi_part = 1
         part = get_part(filepath, conf.failed_folder())
-    if '-c.' in filepath or '-C.' in filepath or '中文' in filepath or '字幕' in filepath:
-        cn_sub = '1'
-        c_word = '-C'  # 中文字幕影片后缀
+
+    # add support to _A, _B, _C multi_part filename
+    if conf.multi_part_abc():
+        # sometimes directory name may contain '-A', we use filename instead
+        filename = os.path.basename(filepath)
+        multi_part_re = re.compile("(-|_)([A-Za-z]).")
+        results = multi_part_re.findall(filename)
+        if len(results) > 0:
+            multi_part = 1
+            results = results[0]
+            # print("!!!!!!!REGEX results: {}".format(results))
+            abc = results[1].lower() # the second capture group is multi-part letter
+            part = '-CD' + str(ord(abc) - 96)
+            # print("!!!!!!!abc: {}, part: {}".format(abc, part))
+    else:
+        if '-c.' in filepath or '-C.' in filepath or '中文' in filepath or '字幕' in filepath:
+            cn_sub = '1'
+            c_word = '-C'  # 中文字幕影片后缀
+
     if '流出' in filepath:
         liuchu = '流出'
     if 'leak' in filepath:
@@ -576,10 +600,6 @@ def core_main(file_path, number_th, conf: config.Config):
     # 调试模式检测
     if conf.debug():
         debug_print(json_data)
-
-    # patch file name with publisher (if necessary)
-    if conf.add_studio_to_number():
-        number = patch_studio_name_to_filename(json_data['studio'], number)
 
     # 创建文件夹
     path = create_folder(conf.success_folder(), json_data['location_rule'], json_data, conf)

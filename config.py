@@ -96,6 +96,9 @@ class Config:
     def filter_names(self):
         return self._filter_names
 
+    def multi_part_abc(self) -> bool:
+        return self.conf.getboolean("common", "multi_part_abc")
+
     def _parse_filter_names(self):
         filter_name_path = self.conf.get("others", "filter_name_path")
         filter_name_path = os.path.abspath(filter_name_path)
