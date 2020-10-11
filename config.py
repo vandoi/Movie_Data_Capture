@@ -40,8 +40,12 @@ class Config:
         return self.conf.getboolean("common", "failed_move")
     def auto_exit(self) -> bool:
         return self.conf.getboolean("common", "auto_exit")
-    def transalte_to_sc(self) -> bool:
-        return self.conf.getboolean("common", "transalte_to_sc")
+    def translate_to_sc(self) -> bool:
+        return self.conf.getboolean("common", "translate_to_sc")
+    def translate_to_tc(self) -> bool:
+        return self.conf.getboolean("common", "translate_to_tc")
+    def translate_dict_path(self):
+        return self.conf.get("common", "translate_dict_path")
 
     def proxy(self) -> [str, int, int, str]:
         try:

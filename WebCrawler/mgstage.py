@@ -68,7 +68,7 @@ def getTag(a):
     total = []
     for i in result:
         try:
-            total.append(translateTag_to_sc(i))
+            total.append(translateTag(i))
         except:
             pass
     return total

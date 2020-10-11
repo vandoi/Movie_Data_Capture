@@ -35,19 +35,19 @@ def getActor(a): #//*[@id="center_column"]/div[2]/div[1]/div/table/tbody/tr[1]/t
     return d
 def getStudio(a):
     html = etree.fromstring(a, etree.HTMLParser())  # //table/tr[1]/td[1]/text()
-    result1 = str(html.xpath('//p[contains(text(),"制作商: ")]/following-sibling::p[1]/a/text()')).strip(" ['']").replace("', '",' ')
+    result1 = str(html.xpath('//p[contains(text(),"メーカー: ")]/following-sibling::p[1]/a/text()')).strip(" ['']").replace("', '",' ')
     return result1
 def getRuntime(a):
     html = etree.fromstring(a, etree.HTMLParser())  # //table/tr[1]/td[1]/text()
-    result1 = str(html.xpath('//span[contains(text(),"长度:")]/../text()')).strip(" ['分钟']")
+    result1 = str(html.xpath('//span[contains(text(),"収録時間:")]/../text()')).strip(" ['分']")
     return result1
 def getLabel(a):
     html = etree.fromstring(a, etree.HTMLParser())  # //table/tr[1]/td[1]/text()
-    result1 = str(html.xpath('//p[contains(text(),"系列:")]/following-sibling::p[1]/a/text()')).strip(" ['']")
+    result1 = str(html.xpath('//p[contains(text(),"シリーズ:")]/following-sibling::p[1]/a/text()')).strip(" ['']")
     return result1
 def getNum(a):
     html = etree.fromstring(a, etree.HTMLParser())  # //table/tr[1]/td[1]/text()
-    result1 = str(html.xpath('//span[contains(text(),"识别码:")]/../span[2]/text()')).strip(" ['']")
+    result1 = str(html.xpath('//span[contains(text(),"品番:")]/../span[2]/text()')).strip(" ['']")
     return result1
 def getYear(release):
     try:
@@ -57,7 +57,7 @@ def getYear(release):
         return release
 def getRelease(a):
     html = etree.fromstring(a, etree.HTMLParser())  # //table/tr[1]/td[1]/text()
-    result1 = str(html.xpath('//span[contains(text(),"发行时间:")]/../text()')).strip(" ['']")
+    result1 = str(html.xpath('//span[contains(text(),"発売日:")]/../text()')).strip(" ['']")
     return result1
 def getCover(htmlcode):
     html = etree.fromstring(htmlcode, etree.HTMLParser())
@@ -72,12 +72,12 @@ def getTag(a):  # 获取演员
     a = soup.find_all(attrs={'class': 'genre'})
     d = []
     for i in a:
-        d.append(i.get_text())
+        d.append(translateTag(i.get_text()))
     return d
 def getSeries(htmlcode):
     try:
         html = etree.fromstring(htmlcode, etree.HTMLParser())  # //table/tr[1]/td[1]/text()
-        result1 = str(html.xpath('//span[contains(text(),"系列:")]/../span[2]/text()')).strip(" ['']")
+        result1 = str(html.xpath('//span[contains(text(),"シリーズ:")]/../span[2]/text()')).strip(" ['']")
         return result1
     except:
         return ''
@@ -85,15 +85,15 @@ def getSeries(htmlcode):
 def main(number):
     html = get_html('https://tellme.pw/avsox')
     site = etree.HTML(html).xpath('//div[@class="container"]/div/a/@href')[0]
-    a = get_html(site + '/cn/search/' + number)
+    a = get_html(site + '/ja/search/' + number)
     html = etree.fromstring(a, etree.HTMLParser())  # //table/tr[1]/td[1]/text()
     result1 = str(html.xpath('//*[@id="waterfall"]/div/a/@href')).strip(" ['']")
     if result1 == '' or result1 == 'null' or result1 == 'None':
-        a = get_html(site + '/cn/search/' + number.replace('-', '_'))
+        a = get_html(site + '/ja/search/' + number.replace('-', '_'))
         html = etree.fromstring(a, etree.HTMLParser())  # //table/tr[1]/td[1]/text()
         result1 = str(html.xpath('//*[@id="waterfall"]/div/a/@href')).strip(" ['']")
         if result1 == '' or result1 == 'null' or result1 == 'None':
-            a = get_html(site + '/cn/search/' + number.replace('_', ''))
+            a = get_html(site + '/ja/search/' + number.replace('_', ''))
             html = etree.fromstring(a, etree.HTMLParser())  # //table/tr[1]/td[1]/text()
             result1 = str(html.xpath('//*[@id="waterfall"]/div/a/@href')).strip(" ['']")
     web = get_html(result1)

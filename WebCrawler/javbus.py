@@ -104,7 +104,7 @@ def getTag(htmlcode):  # 获取标签
     for i in a:
         if 'onmouseout' in str(i):
             continue
-        tag.append(translateTag_to_sc(i.get_text()))
+        tag.append(translateTag(i.get_text()))
     return tag
 
 def main_uncensored(number):

@@ -51,7 +51,7 @@ def getTag_fc2com(number):     #获取番号
     result = re.findall('"tag":"(.*?)"', htmlcode)
     tag = []
     for i in result:
-        tag.append(ADC_function.translateTag_to_sc(i))
+        tag.append(ADC_function.translateTag(i))
     return tag
 def getYear_fc2com(release):
     try:
