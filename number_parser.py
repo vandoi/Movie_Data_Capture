@@ -3,7 +3,7 @@ import re
 from core import *
 
 # regex
-censor_re = re.compile("([a-zA-Z]{2,5})-?([0-9]{3,5})((-|_)[a-zA-Z0-9])?") # group1: publisher, group2: number, group3: section
+censor_re = re.compile("([a-zA-Z]{2,5})-?([0-9]{2,5})((-|_)[a-zA-Z0-9])?") # group1: publisher, group2: number, group3: section
 heyzo_re = re.compile("([a-zA-Z]{5})(-|_)([0-9]{4})") # special regex for heyzo, only grab video number
 uncensor_re = re.compile("([0-9]{6}(-|_)[0-9]{3})") # only grab the number
 fc2_re = re.compile("(-|_)([0-9]{7})") # special regex for fc2, only grab the number
