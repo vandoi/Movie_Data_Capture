@@ -15,8 +15,16 @@ class Config:
             except:
                 self.conf.read(path, encoding="utf-8")
         else:
-            print("[-] Config file not found! Use the default settings")
-            self.conf = self._default_config()
+            try:
+                self.conf = configparser.ConfigParser()
+                try: # From single crawler debug use only
+                    self.conf.read('../' + path, encoding="utf-8-sig")
+                except:
+                    self.conf.read('../' + path, encoding="utf-8")
+            except Exception as e:
+                print("[-]Config file not found! Use the default settings")
+                print("[-]",e)
+                self.conf = self._default_config()
 
         # parse config that need to be converted to list
         self._parse_to_list()
@@ -40,21 +48,29 @@ class Config:
         return self.conf.getboolean("common", "failed_move")
     def auto_exit(self) -> bool:
         return self.conf.getboolean("common", "auto_exit")
+        
     def translate_to_sc(self) -> bool:
         return self.conf.getboolean("common", "translate_to_sc")
     def translate_to_tc(self) -> bool:
         return self.conf.getboolean("common", "translate_to_tc")
     def translate_dict_path(self):
         return self.conf.get("common", "translate_dict_path")
+    def is_translate(self) -> bool:
+        return self.conf.getboolean("translate", "switch")
+    def translate_values(self) -> bool:
+        return self.conf.get("translate", "values")
+    def translate_language(self) -> str:
+        return self.conf.get("translate", "language")
 
     def proxy(self) -> [str, int, int, str]:
         try:
             sec = "proxy"
+            switch = self.conf.get(sec, "switch")
             proxy = self.conf.get(sec, "proxy")
             timeout = self.conf.getint(sec, "timeout")
             retry = self.conf.getint(sec, "retry")
             proxytype = self.conf.get(sec, "type")
-            return proxy, timeout, retry, proxytype
+            return switch, proxy, timeout, retry, proxytype
         except ValueError:
             self._exit("common")
 
@@ -138,7 +154,7 @@ class Config:
         sec2 = "proxy"
         conf.add_section(sec2)
         conf.set(sec2, "proxy", "")
-        conf.set(sec2, "timeout", "10")
+        conf.set(sec2, "timeout", "5")
         conf.set(sec2, "retry", "3")
         conf.set(sec2, "type", "socks5")
 
@@ -154,7 +170,7 @@ class Config:
 
         sec5 = "priority"
         conf.add_section(sec5)
-        conf.set(sec5, "website", "javbus,javdb,fanza,xcity,mgstage,fc2,avsox,jav321,xcity")
+        conf.set(sec5, "website", "airav,javbus,javdb,fanza,xcity,mgstage,fc2,avsox,jav321,xcity")
 
         sec6 = "escape"
         conf.add_section(sec6)
@@ -165,9 +181,15 @@ class Config:
         conf.add_section(sec7)
         conf.set(sec7, "switch", "0")
 
-        sec8 = "others"
+        sec8 = "translate"
         conf.add_section(sec8)
-        conf.set(sec8, "leftover", "gallery", "gallery.zip")
+        conf.set(sec8, "switch", "0")
+        conf.set(sec8, "values", "title,outline")
+        conf.set(sec8, "language", "zh_cn")
+
+        sec9 = "others"
+        conf.add_section(sec9)
+        conf.set(sec9, "leftover", "gallery", "gallery.zip")
 
         return conf
 
@@ -189,3 +211,6 @@ if __name__ == "__main__":
     print(config.escape_folder())
     print(config.debug())
     print(config.leftover())
+    print(config.is_translate())
+    print(config.translate_values())
+

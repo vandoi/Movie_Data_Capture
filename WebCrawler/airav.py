@@ -6,8 +6,10 @@ from lxml import etree#need install
 from bs4 import BeautifulSoup#need install
 import json
 from ADC_function import *
-from WebCrawler import fanza
 
+
+
+# airav这个网站没有演员图片，所以直接使用javbus的图
 def getActorPhoto(htmlcode): #//*[@id="star_qdt"]/li/a/img
     soup = BeautifulSoup(htmlcode, 'lxml')
     a = soup.find_all(attrs={'class': 'star-name'})
@@ -20,14 +22,18 @@ def getActorPhoto(htmlcode): #//*[@id="star_qdt"]/li/a/img
         p2={t:p}
         d.update(p2)
     return d
+
 def getTitle(htmlcode):  #获取标题
     doc = pq(htmlcode)
-    title=str(doc('div.container h3').text()).replace(' ','-')
+    # h5:first-child定位第一个h5标签，妈的找了好久才找到这个语法
+    title = str(doc('div.d-flex.videoDataBlock h5.d-none.d-md-block:nth-child(2)').text()).replace(' ', '-')
     try:
         title2 = re.sub('n\d+-','',title)
+
         return title2
     except:
         return title
+
 def getStudio(htmlcode): #获取厂商 已修改
     html = etree.fromstring(htmlcode,etree.HTMLParser())
     # 如果记录中冇导演，厂商排在第4位
@@ -55,13 +61,15 @@ def getRuntime(htmlcode): #获取分钟 已修改
     html = etree.fromstring(htmlcode, etree.HTMLParser())
     result = str(html.xpath('/html/body/div[5]/div[1]/div[2]/p[3]/text()')).strip(" ['']分鐘")
     return result
+
 def getActor(htmlcode):   #获取女优
     b=[]
     soup=BeautifulSoup(htmlcode,'lxml')
-    a=soup.find_all(attrs={'class':'star-name'})
+    a=soup.find_all(attrs={'class':'videoAvstarListItem'})
     for i in a:
         b.append(i.get_text())
     return b
+
 def getNum(htmlcode):     #获取番号
     html = etree.fromstring(htmlcode, etree.HTMLParser())
     result = str(html.xpath('/html/body/div[5]/div[1]/div[2]/p[1]/span[2]/text()')).strip(" ['']")
@@ -73,16 +81,11 @@ def getDirector(htmlcode): #获取导演 已修改
     else:
         result = ''         # 记录中有可能没有导演数据
     return result
-def getCID(htmlcode):
-    html = etree.fromstring(htmlcode, etree.HTMLParser())
-    #print(htmlcode)
-    string = html.xpath("//a[contains(@class,'sample-box')][1]/@href")[0].replace('https://pics.dmm.co.jp/digital/video/','')
-    result = re.sub('/.*?.jpg','',string)
-    return result
+
 def getOutline(htmlcode):  #获取演员
     html = etree.fromstring(htmlcode, etree.HTMLParser())
     try:
-        result = html.xpath("string(//div[contains(@class,'mg-b20 lh4')])").replace('\n','')
+        result = html.xpath("string(//div[@class='d-flex videoDataBlock']/div[@class='synopsis']/p)").replace('\n','')
         return result
     except:
         return ''
@@ -100,73 +103,58 @@ def getSerise(htmlcode):   #获取系列 已修改
 def getTag(htmlcode):  # 获取标签
     tag = []
     soup = BeautifulSoup(htmlcode, 'lxml')
-    a = soup.find_all(attrs={'class': 'genre'})
+    x = soup.find_all(attrs={'class': 'tagBtnMargin'})
+    a = x[0].find_all('a')
+
     for i in a:
-        if 'onmouseout' in str(i):
-            continue
-        tag.append(translateTag(i.get_text()))
+        tag.append(i.get_text())
     return tag
-
-def main_uncensored(number):
-    htmlcode = get_html('https://www.javbus.com/ja/' + number)
-    if getTitle(htmlcode) == '':
-        htmlcode = get_html('https://www.javbus.com/ja/' + number.replace('-','_'))
-    try:
-        dww_htmlcode = fanza.main_htmlcode(getCID(htmlcode))
-    except:
-        dww_htmlcode = ''
-    dic = {
-        'title': str(re.sub('\w+-\d+-','',getTitle(htmlcode))).replace(getNum(htmlcode)+'-',''),
-        'studio': getStudio(htmlcode),
-        'year': getYear(htmlcode),
-        'outline': getOutline(dww_htmlcode),
-        'runtime': getRuntime(htmlcode),
-        'director': getDirector(htmlcode),
-        'actor': getActor(htmlcode),
-        'release': getRelease(htmlcode),
-        'number': getNum(htmlcode),
-        'cover': getCover(htmlcode),
-        'tag': getTag(htmlcode),
-        'label': getSerise(htmlcode),
-        'imagecut': 0,
-        'actor_photo': '',
-        'website': 'https://www.javbus.com/ja/' + number,
-        'source': 'javbus.py',
-        'series': getSerise(htmlcode),
-    }
-    js = json.dumps(dic, ensure_ascii=False, sort_keys=True, indent=4, separators=(',', ':'), )  # .encode('UTF-8')
-    return js
-
 
 def main(number):
     try:
         try:
             try:
-                htmlcode = get_html('https://www.fanbus.us/' + number)
+                htmlcode = get_html('https://cn.airav.wiki/video/' + number)
+                javbus_htmlcode = get_html('https://www.javbus.com/ja/' + number)
+
+
             except:
-                htmlcode = get_html('https://www.javbus.com/' + number)
-            try:
-                dww_htmlcode = fanza.main_htmlcode(getCID(htmlcode))
-            except:
-                dww_htmlcode = ''
+                print(number)
+
             dic = {
+                # 标题可使用airav
                 'title': str(re.sub('\w+-\d+-', '', getTitle(htmlcode))),
-                'studio': getStudio(htmlcode),
-                'year': str(re.search('\d{4}', getYear(htmlcode)).group()),
-                'outline': getOutline(dww_htmlcode),
-                'runtime': getRuntime(htmlcode),
-                'director': getDirector(htmlcode),
+                # 制作商选择使用javbus
+                'studio': getStudio(javbus_htmlcode),
+                # 年份也是用javbus
+                'year': str(re.search('\d{4}', getYear(javbus_htmlcode)).group()),
+                #  简介 使用 airav
+                'outline': getOutline(htmlcode),
+                # 使用javbus
+                'runtime': getRuntime(javbus_htmlcode),
+                # 导演 使用javbus
+                'director': getDirector(javbus_htmlcode),
+                # 作者 使用airav
                 'actor': getActor(htmlcode),
-                'release': getRelease(htmlcode),
-                'number': getNum(htmlcode),
-                'cover': getCover(htmlcode),
+                # 发售日使用javbus
+                'release': getRelease(javbus_htmlcode),
+                # 番号使用javbus
+                'number': getNum(javbus_htmlcode),
+                # 封面链接 使用javbus
+                'cover': getCover(javbus_htmlcode),
+
                 'imagecut': 1,
+                # 使用 airav
                 'tag': getTag(htmlcode),
-                'label': getSerise(htmlcode),
-                'actor_photo': getActorPhoto(htmlcode),
-                'website': 'https://www.javbus.com/' + number,
-                'source': 'javbus.py',
-                'series': getSerise(htmlcode),
+                # 使用javbus
+                'label': getSerise(javbus_htmlcode),
+                # 妈的，airav不提供作者图片
+                'actor_photo': getActorPhoto(javbus_htmlcode),
+
+                'website': 'https://www.airav.wiki/video/' + number,
+                'source': 'airav.py',
+                # 使用javbus
+                'series': getSerise(javbus_htmlcode),
             }
             js = json.dumps(dic, ensure_ascii=False, sort_keys=True, indent=4,separators=(',', ':'), )  # .encode('UTF-8')
             return js
@@ -181,5 +169,6 @@ def main(number):
         )
         return js
 
-if __name__ == "__main__" :
-    print(main('ipx-292'))
+
+if __name__ == '__main__':
+    print(main('sdsi-019'))
