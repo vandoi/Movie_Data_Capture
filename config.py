@@ -101,6 +101,7 @@ class Config:
     def sources(self) -> str:
         return self.conf.get("priority", "website")
 
+
     def escape_literals(self) -> str:
         return self.conf.get("escape", "literals")
 
@@ -130,6 +131,18 @@ class Config:
     def _parse_to_list(self):
         leftover_str = self.conf.get("others", "leftover")
         self._leftover = leftover_str.split(",")
+
+    def porn_sources(self) -> str:
+        return self.conf.get("porn", "website")
+
+    def porn_is_keep_name_original(self) -> bool:
+        return self.conf.getboolean("porn", "keep_name_original")
+
+    def porn_naming_rule(self) -> str:
+        return self.conf.get("porn", "naming_rule")
+
+    def porn_location_rule(self) -> str:
+        return self.conf.get("porn", "location_rule")
 
     @staticmethod
     def _exit(sec: str) -> None:
@@ -187,9 +200,16 @@ class Config:
         conf.set(sec8, "values", "title,outline")
         conf.set(sec8, "language", "zh_cn")
 
-        sec9 = "others"
+        sec9 = "porn"
         conf.add_section(sec9)
-        conf.set(sec9, "leftover", "gallery", "gallery.zip")
+        conf.set(sec9, "website", "badoinkvr")
+        conf.set(sec9, "location_rule", "actor+'/'+title+' ('+year+')'")
+        conf.set(sec9, "naming_rule", "title+' ('+year+')'")
+        conf.set(sec9, "keep_name_original", "1")
+
+        sec10 = "others"
+        conf.add_section(sec10)
+        conf.set(sec10, "leftover", "gallery", "gallery.zip")
 
         return conf
 
@@ -207,6 +227,7 @@ if __name__ == "__main__":
     print(config.location_rule())
     print(config.update_check())
     print(config.sources())
+    print(config.sources_porn())
     print(config.escape_literals())
     print(config.escape_folder())
     print(config.debug())
