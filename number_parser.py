@@ -3,7 +3,7 @@ import re
 from core import *
 
 # regex
-censor_re = re.compile("([a-zA-Z]{2,5})-?([0-9]{2,5})((-|_)[a-zA-Z0-9])?") # group1: publisher, group2: number, group3: section
+censor_re = re.compile("([a-zA-Z]{2,6})-?([0-9]{2,5})((-|_)[a-zA-Z0-9])?") # group1: publisher, group2: number, group3: section
 heyzo_re = re.compile("([a-zA-Z]{5})(-|_)([0-9]{4})") # special regex for heyzo, only grab video number
 uncensor_re = re.compile("([0-9]{6}(-|_)[0-9]{3})") # only grab the number
 fc2_re = re.compile("(-|_)([0-9]{7})") # special regex for fc2, only grab the number
@@ -17,6 +17,10 @@ unsensor_publisher = {
     'tokyo-hot': 'Tokyo-Hot',
     'pacopa': 'Pacopacomama',
     'Pacopacomama': 'Pacopacomama'
+}
+
+porn_publisher = {
+    'badoinkvr': 'BaDoinkVR'
 }
 
 # movie name filter
@@ -106,7 +110,37 @@ def get_number(debug, filepath: str, conf: config.Config) -> str:
         print('[-]' + str(e))
         return
     except ValueError as e:
-        return filename
+        return
+
+def get_porn_keyword(debug, filepath: str, conf: config.Config) -> (str, str):
+    filename = os.path.basename(filepath)
+    filename = filename.lower()
+
+    try:
+        # extract unique identifier according to movie type
+        publisher = ""
+        identifier = ""
+        if 'badoinkvr' in filename:
+            badoink_re = re.compile("(?<=_|-)?([a-zA-Z']+)(?=_|-)?")
+            # remove unwanted suffix
+            clean_filename = filename \
+                        .replace('badoinkvr', '').replace('oculus', '') \
+                        .replace('180_180x180_3dh', '') \
+                        .replace('4k_hevc', '') \
+                        .replace('lr', '') \
+                        .replace('.mp4', '')
+
+            print("[!]Detected a BaDoinkVR movie")
+            publisher = porn_publisher['badoinkvr']
+            results = badoink_re.findall(clean_filename)
+            keyword = ' '.join(results)
+            print("[!]{} --> {}".format(filename, keyword))
+            return publisher, keyword
+
+    except ValueError as e:
+        raise ValueError('Unable to capture identifier')
+
+    raise ValueError('Unable to capture identifier')
 
 def get_number_bak(debug,filename: str) -> str:
     # """

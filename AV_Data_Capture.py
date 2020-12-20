@@ -2,8 +2,9 @@
 import argparse
 from core import *
 import os
-from number_parser import get_number
+from number_parser import get_number, get_porn_keyword
 import zipfile
+import traceback 
 
 def check_update(local_version):
     data = json.loads(get_html("https://api.github.com/repos/yoshiko2/AV_Data_Capture/releases/latest"))
@@ -67,42 +68,49 @@ def create_data_and_move(file_path: str, c: config.Config,debug):
     # Normalized number, eg: 111xxx-222.mp4 -> xxx-222.mp4
     n_number = get_number(debug,file_path,c)
 
-    if not n_number:
-        return
+    # Grap keyword from file path for porn (no number provided)
+    if n_number:
+        if debug == True:
+            print("[!]Making Data for [{}], the number is [{}]".format(file_path, n_number))
+            return core_main(file_path, n_number, c, 'jav')
+            print("[*]======================================================")
+        else:
+            try:
+                print("[!]Making Data for [{}], the number is [{}]".format(file_path, n_number))
+                return core_main(file_path, n_number, c, 'jav')
+                print("[*]======================================================")
+            except Exception as err:
+                print("[-] [{}] ERROR: {}".format(file_path, err))
+                traceback.print_exc() 
+                return ""
 
-    if debug == True:
-        print("[!]Making Data for [{}], the number is [{}]".format(file_path, n_number))
-        return core_main(file_path, n_number, c)
-        print("[*]======================================================")
+                # TODO:
+                # If we got leftover in the directory, and we simply move the movie file outside of it,
+                # , it would be problematic. The better way is to move the whole directory to failed folder.
+
+                # 3.7.2 New: Move or not move to failed folder.
+                # if c.failed_move() == False:
+                #     if c.soft_link():
+                #         print("[-]Link {} to failed folder".format(file_path))
+                #         os.symlink(file_path, str(os.getcwd()) + "/" + conf.failed_folder() + "/")
+                # elif c.failed_move() == True:
+                #     if c.soft_link():
+                #         print("[-]Link {} to failed folder".format(file_path))
+                #         os.symlink(file_path, str(os.getcwd()) + "/" + conf.failed_folder() + "/")
+                #     else:
+                #         try:
+                #             print("[-]Move [{}] to failed folder".format(file_path))
+                #             shutil.move(file_path, str(os.getcwd()) + "/" + conf.failed_folder() + "/")
+                #         except Exception as err:
+                #             print('[!]', err)
     else:
         try:
-            print("[!]Making Data for [{}], the number is [{}]".format(file_path, n_number))
-            return core_main(file_path, n_number, c)
-            print("[*]======================================================")
-        except Exception as err:
-            print("[-] [{}] ERROR:".format(file_path))
-            print('[-]', err)
+            publisher, keyword = get_porn_keyword(debug,file_path,c)
+            ## TODO: make a new path in core for porn
+            core_main(file_path, keyword, c, 'porn')
+
+        except ValueError as e:
             return ""
-
-            # TODO:
-            # If we got leftover in the directory, and we simply move the movie file outside of it,
-            # , it would be problematic. The better way is to move the whole directory to failed folder.
-
-            # 3.7.2 New: Move or not move to failed folder.
-            # if c.failed_move() == False:
-            #     if c.soft_link():
-            #         print("[-]Link {} to failed folder".format(file_path))
-            #         os.symlink(file_path, str(os.getcwd()) + "/" + conf.failed_folder() + "/")
-            # elif c.failed_move() == True:
-            #     if c.soft_link():
-            #         print("[-]Link {} to failed folder".format(file_path))
-            #         os.symlink(file_path, str(os.getcwd()) + "/" + conf.failed_folder() + "/")
-            #     else:
-            #         try:
-            #             print("[-]Move [{}] to failed folder".format(file_path))
-            #             shutil.move(file_path, str(os.getcwd()) + "/" + conf.failed_folder() + "/")
-            #         except Exception as err:
-            #             print('[!]', err)
 
 def create_data_and_move_with_custom_number(file_path: str, c: config.Config, custom_number=None):
     try:
