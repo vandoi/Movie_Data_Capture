@@ -69,14 +69,10 @@ def get_number(debug, filepath: str, conf: config.Config) -> str:
                 number = results[0] # the first capture group is number
                 print("number: {}, results: {}".format(number, results))
                 identifier = number
-            elif 'FC2' in filename or 'fc2' in filename: # FC2 movies
+            elif 'FC2-' in filename or 'fc2-' in filename: # FC2 movies, do not include FC2PPV in FC2
                 print("[!]Detected a FC2 movie")
-                # filename = filename \
-                #             .replace('PPV', '').replace('ppv', '') \
-                #             .replace('FC2', '').replace('fc2', '') \
-                #             .replace('--', '-').replace('_', '-')
                 results = fc2_re.findall(filename)
-                # print("filename: {}, results: {}".format(filename, results))
+                print("filename: {}, results: {}".format(filename, results))
                 if len(results) == 0:
                     raise ValueError('Unable to capture identifier')
                 else:

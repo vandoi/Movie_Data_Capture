@@ -77,6 +77,9 @@ class Config:
     def naming_rule(self) -> str:
         return self.conf.get("Name_Rule", "naming_rule")
 
+    def leak_naming_rule(self) -> str:
+        return self.conf.get("Name_Rule", "leak_naming_rule")
+
     def location_rule(self) -> str:
         return self.conf.get("Name_Rule", "location_rule")
 
@@ -175,6 +178,7 @@ class Config:
         conf.add_section(sec3)
         conf.set(sec3, "location_rule", "actor + '/' + number")
         conf.set(sec3, "naming_rule", "number + '-' + title")
+        conf.set(sec3, "leak_naming_rule", "number+'('leak_code+')'+'-'+title")
         conf.set(sec3, "max_title_len", "50")
 
         sec4 = "update"

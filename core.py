@@ -45,7 +45,7 @@ def CreatFailedFolder(failed_folder):
             return 
 
 
-def get_data_from_json(file_number, filepath, conf: config.Config):  # 从JSON返回元数据
+def get_data_from_json(file_number, liuchu, leakcode, filepath, conf: config.Config):  # 从JSON返回元数据
     """
     iterate through all services and fetch the data 
     """
@@ -218,12 +218,20 @@ def get_data_from_json(file_number, filepath, conf: config.Config):  # 从JSON�
     json_data['location_rule'] = location_rule
     json_data['year'] = year
     json_data['actor_list'] = actor_list
+    if liuchu == '流出':
+        json_data['leak_code'] = leakcode
     if conf.is_translate():
         translate_values = conf.translate_values().split(",")
         for translate_value in translate_values:
             json_data[translate_value] = translate(json_data[translate_value], target_language=conf.translate_language())
     naming_rule=""
-    for i in conf.naming_rule().split("+"):
+
+    if liuchu == '流出' and len(leakcode) > 0:
+        naming_rule_to_use = conf.leak_naming_rule()
+    else:
+        naming_rule_to_use = conf.naming_rule()
+
+    for i in naming_rule_to_use.split("+"):
         if i not in json_data:
             naming_rule += i.strip("'").strip('"')
         else:
@@ -466,7 +474,7 @@ def image_download(cover, number, path, conf: config.Config, filepath, failed_fo
     shutil.copyfile(path + '/' + number + '-fanart.jpg',path + '/' + number + '-thumb.jpg')
 
 
-def print_files(path, filename, naming_rule, cn_sub, json_data, filepath, failed_folder, tag, actor_list, liuchu):
+def print_files(path, filename, naming_rule, cn_sub, json_data, filepath, failed_folder, tag, actor_list, liuchu, leakcode):
     title, studio, year, outline, runtime, director, actor_photo, release, number, cover, website, series, label = get_info(json_data)
     output_path = path + "/" + filename + ".nfo"
 
@@ -515,6 +523,8 @@ def print_files(path, filename, naming_rule, cn_sub, json_data, filepath, failed
             if cn_sub == '1':
                 print("  <genre>中文字幕</genre>", file=code)
             print("  <num>" + number + "</num>", file=code)
+            if len(leakcode) > 0:
+                print("  <leakcode>" + leakcode + "</leakcode>", file=code)
             print("  <premiered>" + release + "</premiered>", file=code)
             print("  <cover>" + cover + "</cover>", file=code)
             print("  <website>" + website + "</website>", file=code)
@@ -710,9 +720,20 @@ def core_main(file_path, number_th, conf: config.Config, mode: 'jav'):
     filepath = file_path  # 影片的路径
     number = number_th
 
+    # Add liuchu tag and store the leak code after leak / 流出
+    # file name format: EBOD-203_leak_FC2PPV-1224191
+    filename = os.path.splitext(filepath)[0]
+    leakcode = ''
+    if '流出' in filename:
+        liuchu = '流出'
+        leakcode = filename.partition("_流出_")[2].partition("-CD")[0] # remove CD multi-part in leakcode
+    if 'leak' in filename:
+        liuchu = '流出'
+        leakcode = filename.partition("_leak_")[2].partition("-CD")[0] # remove CD multi-part in leakcode
+
     json_data = {}
     if mode == 'jav':
-        json_data = get_data_from_json(number, filepath, conf)  # 定义番号
+        json_data = get_data_from_json(number, liuchu, leakcode, filepath, conf)  # 定义番号
     elif mode == 'porn':
         json_data = get_data_from_json_porn(number, filepath, conf) # the number is keyword actually
     else:
@@ -767,12 +788,10 @@ def core_main(file_path, number_th, conf: config.Config, mode: 'jav'):
         c_word = '-C'  # 中文字幕影片后缀
 
     # actual filename
-    actual_filename = given_filename + c_word + part
-
-    if '流出' in filepath:
-        liuchu = '流出'
-    if 'leak' in filepath:
-        liuchu = '流出'
+    if liuchu == '流出':
+        actual_filename = given_filename + "_leak_" + leakcode + c_word + part
+    else:
+        actual_filename = given_filename + c_word + part
 
     # 创建输出失败目录
     CreatFailedFolder(conf.failed_folder())
@@ -802,7 +821,7 @@ def core_main(file_path, number_th, conf: config.Config, mode: 'jav'):
         cutImage(imagecut, path, actual_filename)
 
         # 打印文件
-        print_files(path, actual_filename, json_data['naming_rule'], cn_sub, json_data, filepath, conf.failed_folder(), tag, json_data['actor_list'], liuchu)
+        print_files(path, actual_filename, json_data['naming_rule'], cn_sub, json_data, filepath, conf.failed_folder(), tag, json_data['actor_list'], liuchu, leakcode)
 
         # 移动文件
         if mode == 'porn' and conf.porn_is_keep_name_original():
