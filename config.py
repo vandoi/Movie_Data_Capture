@@ -30,6 +30,9 @@ class Config:
         self._parse_to_list()
         self._parse_filter_names()
 
+    def get_inside_conf(self):
+        return self.conf
+
     def main_mode(self) -> str:
         try:
             return self.conf.getint("common", "main_mode")
@@ -147,6 +150,18 @@ class Config:
     def porn_location_rule(self) -> str:
         return self.conf.get("porn", "location_rule")
 
+    def monitor_normal_dir(self) -> str: 
+        return self.conf.get("monitor", "normal_dir")
+
+    def monitor_vr_dir(self) -> str:
+        return self.conf.get("monitor", "vr_dir")
+
+    def monitor_data_dir(self) -> str:
+        return self.conf.get("monitor", "data_dir")
+    
+    def monitor_is_recursive(self) -> bool:
+        return self.conf.getboolean("monitor", "recursive")
+
     @staticmethod
     def _exit(sec: str) -> None:
         print("[-] Read config error! Please check the {} section in config.ini", sec)
@@ -215,8 +230,14 @@ class Config:
         conf.add_section(sec10)
         conf.set(sec10, "leftover", "gallery", "gallery.zip")
 
-        return conf
+        sec11 = "monitor"
+        conf.add_section(sec11)
+        conf.set(sec11, "normal_dir", "")
+        conf.set(sec11, "vr_dir", "")
+        conf.set(sec11, "data_dir", "./data")
+        conf.set(sec11, "recursive", "1")
 
+        return conf
 
 if __name__ == "__main__":
     config = Config()

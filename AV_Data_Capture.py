@@ -189,14 +189,14 @@ def check_and_move_leftover(root, movie_path: str, dir_path_move_to: str, c: con
             except shutil.Error as err:
                 print("[-]Unable to move leftover: {}".format(err))
 
-if __name__ == '__main__':
+def main(custom_conf = None):
     version = '4.1.1'
 
     # Parse command line args
     single_file_path, config_file, custom_number, auto_exit = argparse_function(version)
 
     # Read config.ini
-    conf = config.Config(path=config_file)
+    conf = config.Config(path=config_file) if custom_conf == None else custom_conf
 
     version_print = 'Version ' + version
     print('[*]================== AV Data Capture ===================')
@@ -241,6 +241,9 @@ if __name__ == '__main__':
     CEF(conf.success_folder())
     CEF(conf.failed_folder())
     print("[+]All finished!!!")
+
+if __name__ == '__main__':
+    main()
     if conf.auto_exit():
         sys.exit(0)
     if auto_exit:
