@@ -246,7 +246,5 @@ if __name__ == '__main__':
     main()
     if conf.auto_exit():
         sys.exit(0)
-    if auto_exit:
-        sys.exit(0)
     input("Press enter key exit, you can check the error message before you exit...")
     sys.exit(0)

@@ -4,6 +4,7 @@ from lxml import etree
 from hanziconv import HanziConv
 
 import config
+from urllib.parse import urljoin
 
 SUPPORT_PROXY_TYPE = ("http", "socks5", "socks5h")
 
@@ -151,3 +152,29 @@ def translate(src:str,target_language:str="zh_cn"):
     translate_list = [i["trans"] for i in result.json()["sentences"]]
 
     return "".join(translate_list)
+
+# 文件修改时间距此时的天数
+def file_modification_days(filename) -> int:
+    mfile = pathlib.Path(filename)
+    if not mfile.exists():
+        return 9999
+    mtime = int(mfile.stat().st_mtime)
+    now = int(time.time())
+    days = int((now - mtime) / (24 * 60 * 60))
+    if days < 0:
+        return 9999
+    return days
+
+# 检查文件是否是链接
+def is_link(filename: str):
+    if os.path.islink(filename):
+        return True # symlink
+    elif os.stat(filename).st_nlink > 1:
+        return True # hard link Linux MAC OSX Windows NTFS
+    return False
+
+# URL相对路径转绝对路径
+def abs_url(base_url: str, href: str) -> str:
+    if href.startswith('http'):
+        return href
+    return urljoin(base_url, href)
