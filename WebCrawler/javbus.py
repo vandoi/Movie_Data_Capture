@@ -5,6 +5,7 @@ from pyquery import PyQuery as pq#need install
 from lxml import etree#need install
 from bs4 import BeautifulSoup#need install
 import json
+import traceback
 from ADC_function import *
 from WebCrawler import fanza
 
@@ -120,7 +121,7 @@ def main_uncensored(number):
         'title': str(re.sub('\w+-\d+-','',getTitle(htmlcode))).replace(getNum(htmlcode)+'-',''),
         'studio': getStudio(htmlcode),
         'year': getYear(htmlcode),
-        'outline': getOutline(dww_htmlcode),
+        'outline': getOutline(htmlcode),
         'runtime': getRuntime(htmlcode),
         'director': getDirector(htmlcode),
         'actor': getActor(htmlcode),
@@ -143,18 +144,18 @@ def main(number):
     try:
         try:
             try:
-                htmlcode = get_html('https://www.fanbus.us/' + number)
-            except:
                 htmlcode = get_html('https://www.javbus.com/' + number)
+            except:
+                htmlcode = get_html('https://www.fanbus.us/' + number)
             try:
                 dww_htmlcode = fanza.main_htmlcode(getCID(htmlcode))
             except:
                 dww_htmlcode = ''
             dic = {
-                'title': str(re.sub('\w+-\d+-', '', getTitle(htmlcode))),
+                'title': str(getTitle(htmlcode)),
                 'studio': getStudio(htmlcode),
                 'year': str(re.search('\d{4}', getYear(htmlcode)).group()),
-                'outline': getOutline(dww_htmlcode),
+                'outline': getOutline(htmlcode),
                 'runtime': getRuntime(htmlcode),
                 'director': getDirector(htmlcode),
                 'actor': getActor(htmlcode),
@@ -171,9 +172,11 @@ def main(number):
             }
             js = json.dumps(dic, ensure_ascii=False, sort_keys=True, indent=4,separators=(',', ':'), )  # .encode('UTF-8')
             return js
-        except:
+        except Exception: 
+            traceback.print_exc()
             return main_uncensored(number)
-    except:
+    except Exception: 
+        traceback.print_exc()
         data = {
             "title": "",
         }
@@ -183,4 +186,4 @@ def main(number):
         return js
 
 if __name__ == "__main__" :
-    print(main('ipx-292'))
+    print(main('CJVR-006'))
